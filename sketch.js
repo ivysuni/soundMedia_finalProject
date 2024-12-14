@@ -1,7 +1,16 @@
 let xsong, eve, ill;
 let btn1, btn2, btn3;
+let slider1;
+let sliderPan;
+let sliderRate;
+
+var jumpButton1;
+var jumpButton2;
+let jumpV;
+
 let amp;
 let vol;
+
 let rotationGradient;
 let rotationGradientSlider;
 let noOfStars = 10000, sizeDiff = 0.1, majorAxisMinLen = 10, widthHeightRatio = 0.7;
@@ -19,7 +28,7 @@ function setup() {
   amp = new p5.Amplitude();
 
   rotationGradient = PI / noOfStars;
-  rotationGradientSlider = createSlider(0, rotationGradient * 5, rotationGradient, rotationGradient / 100);
+  rotationGradientSlider = createSlider(0, rotationGradient * 10, rotationGradient * 3, rotationGradient / 100);
 
   for (let i = 0; i < noOfStars; i++) {
     const majorAxisLen = majorAxisMinLen + i * sizeDiff;
@@ -54,6 +63,18 @@ function setup() {
   btn3.mousePressed(playMusic3);
   
   vol = 1.0;
+  
+  slider = createSlider(0, 2, 1, 0.1);
+  sliderPan = createSlider(-1, 1, 0, 0.1);
+  sliderRate = createSlider(0, 2, 1, 0.1);
+  
+  jumpButton1 = createButton('<<');
+  jumpButton1.mousePressed(jumpSong2);
+  
+  jumpButton2 = createButton('>>');
+  jumpButton2.mousePressed(jumpSong1);
+  
+  jumpV = 0;
 }
 
 function draw() {
@@ -67,7 +88,22 @@ function draw() {
 
   translate(width / 2, height / 2 - 30);
   
-  // Dynamic star number based on audio level
+  xsong.setVolume(vol);
+  eve.setVolume(vol);
+  ill.setVolume(vol);
+  vol = slider.value();
+  xsong.pan(sliderPan.value());
+  xsong.rate(sliderRate.value());
+  eve.pan(sliderPan.value());
+  eve.rate(sliderRate.value());
+  ill.pan(sliderPan.value());
+  ill.rate(sliderRate.value());
+  console.log(slider.value());
+  console.log(xsong.duration());
+  console.log(eve.duration());
+  console.log(ill.duration());
+  
+  
   noOfStars = constrain(int(ampLevel), 100, 10000);
   
   for (let i = 0; i < noOfStars; i++) {    
@@ -140,3 +176,27 @@ function playMusic3() {
     btn3.html('illumination');
   }
 }
+
+function jumpSong1(){ // 각 노래 수치에 맞게 조정해야 함...
+  jumpV = jumpV + 19.0272;
+  if(jumpV + 19.0272 >= 190.272){
+    jumpV = 190.272;
+  }
+  xsong.jump(jumpV);
+  eve.jump(jumpV);
+  ill.jump(jumpV);
+  
+  // console.log(jumpV);
+}
+
+
+function jumpSong2(){ // 각 노래 수치에 맞게 조정해야 함...
+  jumpV = jumpV - 19.0272;
+  if(jumpV <= 19.0272){
+    jumpV = 0;
+  }
+  xsong.jump(jumpV);
+  eve.jump(jumpV);
+  ill.jump(jumpV);
+}
+
