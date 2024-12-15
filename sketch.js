@@ -1,113 +1,45 @@
-let xsong, eve, ill;
-let btn1, btn2, btn3;
-let slider1;
-let sliderPan;
-let sliderRate;
-
-var jumpButton1;
-var jumpButton2;
-let jumpV;
-
+let xsong, yuki, ill;
+let btn1, btn2, btn3, sliderVol, sliderPan, sliderRate;
+let jumpButton1, jumpButton2;
 let amp;
-let vol;
 
 let rotationGradient;
-let rotationGradientSlider;
-let noOfStars = 10000, sizeDiff = 0.1, majorAxisMinLen = 10, widthHeightRatio = 0.7;
-let stars = [];
+const noOfStars = 10000, sizeDiff = 0.1, majorAxisMinLen = 10, widthHeightRatio = 0.7;
+const stars = [];
 
-function preload(){
+function preload() {
   soundFormats('mp3', 'ogg');
   xsong = loadSound('ChristmasSong.mp3');
-  eve = loadSound('ChristmasEve.mp3');
+  yuki = loadSound('Yukiakari.mp3');
   ill = loadSound('illumination.mp3');
 }
 
 function setup() {
   createCanvas(640, 640);
   amp = new p5.Amplitude();
-
   rotationGradient = PI / noOfStars;
-  rotationGradientSlider = createSlider(0, rotationGradient * 10, rotationGradient * 3, rotationGradient / 100);
 
   for (let i = 0; i < noOfStars; i++) {
     const majorAxisLen = majorAxisMinLen + i * sizeDiff;
     stars.push(new Star(majorAxisLen));
   }
-  
-  btn1 = createButton('Christmas Song');
-  btn1.size(134, 23);
-  btn1.style("background", "white");
-  btn1.style("font-size", "16px");
-  btn1.style("border-radius", "14px");
-  btn1.style("border-width", "0px");
-  btn1.position(103, 550);
-  btn1.mousePressed(playMusic);
 
-  btn2 = createButton('Christmas Eve');
-  btn2.size(134, 23);
-  btn2.style("background", "white");
-  btn2.style("font-size", "16px");
-  btn2.style("border-radius", "14px");
-  btn2.style("border-width", "0px");
-  btn2.position(width / 2 - btn2.width / 2, 550);
-  btn2.mousePressed(playMusic2);
-  
-  btn3 = createButton('illumination');
-  btn3.size(134, 23);
-  btn3.style("background", "white");
-  btn3.style("font-size", "16px");
-  btn3.style("border-radius", "14px");
-  btn3.style("border-width", "0px");
-  btn3.position(403, 550);
-  btn3.mousePressed(playMusic3);
-  
-  vol = 1.0;
-  
-  slider = createSlider(0, 2, 1, 0.1);
-  sliderPan = createSlider(-1, 1, 0, 0.1);
-  sliderRate = createSlider(0, 2, 1, 0.1);
-  
-  jumpButton1 = createButton('<<');
-  jumpButton1.mousePressed(jumpSong2);
-  
-  jumpButton2 = createButton('>>');
-  jumpButton2.mousePressed(jumpSong1);
-  
-  jumpV = 0;
+  createButtonUI();
+  createSliders();
 }
 
 function draw() {
   background('black');
-  
-  noFill();
-  stroke('white');
-  
+  displayUI();
+
   let ampLevel = amp.getLevel() * 20000;
-  console.log('Amplitude Level:', ampLevel);
+  let rotationFactor = map(mouseX, 0, width, 0, PI);
 
   translate(width / 2, height / 2 - 30);
-  
-  xsong.setVolume(vol);
-  eve.setVolume(vol);
-  ill.setVolume(vol);
-  vol = slider.value();
-  xsong.pan(sliderPan.value());
-  xsong.rate(sliderRate.value());
-  eve.pan(sliderPan.value());
-  eve.rate(sliderRate.value());
-  ill.pan(sliderPan.value());
-  ill.rate(sliderRate.value());
-  console.log(slider.value());
-  console.log(xsong.duration());
-  console.log(eve.duration());
-  console.log(ill.duration());
-  
-  
-  noOfStars = constrain(int(ampLevel), 100, 10000);
-  
-  for (let i = 0; i < noOfStars; i++) {    
-    rotate(rotationGradientSlider.value());
+
+  let starCount = constrain(int(ampLevel), 100, noOfStars);
+  for (let i = 0; i < starCount; i++) {
+    rotate(i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 3) / starCount);
     stars[i].display();
     stars[i].update();
   }
@@ -120,83 +52,111 @@ class Star {
     this.theta = random(2 * PI);
     this.deltaTheta = 0.01;
   }
-  
+
   display() {
     const x = (this.majorAxisLen / 2) * cos(this.theta);
     const y = (this.minorAxisLen / 2) * sin(this.theta);
-    
     noStroke();
     fill(255, 255, 255, 100);
     circle(x, y, 2);
   }
-  
+
   update() {
     this.theta += this.deltaTheta;
   }
 }
 
-function playMusic() {
-  if (!xsong.isPlaying()) {
-    xsong.play();
-    if (eve.isPlaying()) { eve.stop(); }
-    if (ill.isPlaying()) { ill.stop(); }
-    btn1.html('STOP');
-    btn2.html('Christmas Eve');
-    btn3.html('illumination');
+function createButtonUI() {
+  const buttonLabels = ['Christmas Song', 'Yukiakari', 'illumination'];
+  const buttonActions = [() => toggleMusic(xsong, btn1), () => toggleMusic(yuki, btn2), () => toggleMusic(ill, btn3)];
+
+  [btn1, btn2, btn3] = buttonLabels.map((label, idx) => {
+    let btn = createButton(label);
+    btn.size(134, 23);
+    styleButton(btn);
+    btn.position(103 + idx * 150, 590);
+    btn.mousePressed(buttonActions[idx]);
+    return btn;
+  });
+
+  jumpButton1 = createButton('<<');
+  jumpButton1.position(280, 510);
+  jumpButton1.mousePressed(() => jumpSong(-0.2));
+
+  jumpButton2 = createButton('>>');
+  jumpButton2.position(328, 510);
+  jumpButton2.mousePressed(() => jumpSong(0.2));
+}
+
+function createSliders() {
+  sliderVol = createSlider(0, 2, 1, 0.1).position(103, 565);
+  sliderPan = createSlider(-1, 1, 0, 0.1).position(253, 565);
+  sliderRate = createSlider(0, 2, 1, 0.1).position(403, 565);
+}
+
+function styleButton(btn) {
+  btn.style("background", "white");
+  btn.style("font-size", "16px");
+  btn.style("border-radius", "14px");
+  btn.style("border-width", "0px");
+}
+
+function displayUI() {
+  textSize(15);
+  fill('white');
+  text("vol", 158, 560);
+  text("L                 R", 265, 560);
+  text("speed", 446, 560);
+
+  setMusicProperties(xsong, btn1, 'Christmas Song');
+  setMusicProperties(yuki, btn2, 'Yukiakari');
+  setMusicProperties(ill, btn3, 'illumination');
+}
+
+function setMusicProperties(sound, button, label) {
+  sound.setVolume(sliderVol.value());
+  sound.pan(sliderPan.value());
+  sound.rate(sliderRate.value());
+
+  if (!sound.isPlaying() && button.html() !== label) {
+    button.html(label);
+  }
+}
+
+function resetButtons(activeButton) {
+  [btn1, btn2, btn3].forEach(btn => {
+    if (btn !== activeButton) btn.html(btn.elt.textContent.split(' ')[0]);
+  });
+}
+
+
+function stopAllMusic() {
+  if (xsong.isPlaying()) xsong.stop();
+  if (yuki.isPlaying()) yuki.stop();
+  if (ill.isPlaying()) ill.stop();
+}
+
+function toggleMusic(sound, button) {
+  if (!sound.isPlaying()) {
+    stopAllMusic();
+    sound.play();
+    button.html('STOP');
   } else {
-    xsong.stop();
-    btn1.html('Christmas Song');
+    sound.stop();
+    button.html(button.elt.textContent.split(' ')[0]);
   }
 }
 
-function playMusic2() {
-  if (!eve.isPlaying()) {
-    eve.play();
-    if (xsong.isPlaying()) { xsong.stop(); }
-    if (ill.isPlaying()) { ill.stop(); }
-    btn2.html('STOP');
-    btn1.html('Christmas Song');
-    btn3.html('illumination');
-  } else {
-    eve.stop();
-    btn2.html('Christmas Eve');
-  }
+function jumpSong(percentage) {
+  const sounds = [xsong, yuki, ill];
+  sounds.forEach(sound => {
+    if (sound && sound.isPlaying()) {
+      const currentTime = sound.currentTime();
+      const duration = sound.duration();
+      if (currentTime !== undefined && duration !== undefined && duration - currentTime > 1) { // 추가된 조건
+        const newTime = constrain(currentTime + percentage * duration, 0, duration);
+        sound.jump(newTime);
+      }
+    }
+  });
 }
-
-function playMusic3() {
-  if (!ill.isPlaying()) {
-    ill.play();
-    if (xsong.isPlaying()) { xsong.stop(); }
-    if (eve.isPlaying()) { eve.stop(); }
-    btn3.html('STOP');
-    btn1.html('Christmas Song');
-    btn2.html('Christmas Eve');
-  } else {
-    ill.stop();
-    btn3.html('illumination');
-  }
-}
-
-function jumpSong1(){ // 각 노래 수치에 맞게 조정해야 함...
-  jumpV = jumpV + 19.0272;
-  if(jumpV + 19.0272 >= 190.272){
-    jumpV = 190.272;
-  }
-  xsong.jump(jumpV);
-  eve.jump(jumpV);
-  ill.jump(jumpV);
-  
-  // console.log(jumpV);
-}
-
-
-function jumpSong2(){ // 각 노래 수치에 맞게 조정해야 함...
-  jumpV = jumpV - 19.0272;
-  if(jumpV <= 19.0272){
-    jumpV = 0;
-  }
-  xsong.jump(jumpV);
-  eve.jump(jumpV);
-  ill.jump(jumpV);
-}
-
