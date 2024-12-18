@@ -6,35 +6,42 @@ let jumpButton1, jumpButton2, psButton;
 let amp;
 
 let rotationGradient;
-const noOfStars = 10000, sizeDiff = 0.07, majorAxisMinLen = 3, widthHeightRatio = 0.7;
+const noOfStars = 10000,
+  sizeDiff = 0.07,
+  majorAxisMinLen = 3,
+  widthHeightRatio = 0.7;
 const stars = [];
 
 var fft;
 var smoothing = 0.8;
 var binCount = 1024;
-var particles = new Array(binCount*1.5);
+var particles = new Array(binCount * 1.5);
 
-let word = "X-MAS!!!";
+let word = "Click!!!";
 let posX, posY;
 let targetPosX, targetPosY;
 let lerpFactor = 0.1;
 
+let textArray = ["🥶", "🎄", "🎁", "🐺", "⛄", "❄️"];
+let texts = [];
+
+
 function preload() {
-  soundFormats('mp3', 'ogg');
-  xsong = loadSound('ChristmasSong.mp3');
-  yuki = loadSound('Yukiakari.mp3');
-  ill = loadSound('illumination.mp3');
+  soundFormats("mp3", "ogg");
+  xsong = loadSound("ChristmasSong.mp3");
+  yuki = loadSound("Yukiakari.mp3");
+  ill = loadSound("illumination.mp3");
 }
 
 function setup() {
   createCanvas(640, 1280);
   amp = new p5.Amplitude();
-  
+
   posX = width / 2;
   posY = height / 2;
   targetPosX = mouseX;
   targetPosY = mouseY;
-  
+
   rotationGradient = PI / noOfStars;
 
   for (let i = 0; i < noOfStars; i++) {
@@ -44,10 +51,9 @@ function setup() {
 
   createButtonUI();
   createSliders();
-  
+
   fft = new p5.FFT(smoothing, binCount);
 
-  
   for (var i = 0; i < particles.length; i++) {
     var x = map(i, 0, binCount, 0, width * 2);
     var y = random(-height, height);
@@ -57,26 +63,34 @@ function setup() {
 }
 
 function draw() {
-  background('black');
+  background("black");
 
   // Star Layer
   push();
-  translate(width / 2, height / 2 - 330);
+  translate(width / 2, height / 2 - 130);
   let ampLevel = amp.getLevel() * 20000;
-  let rotationFactor = map(amp.getLevel()/15, amp.getLevel()/15, amp.getLevel()*15, amp.getLevel()*15, PI);
-  let starCount = constrain(int(ampLevel*3), 100, noOfStars); // 은하 밀도, 사이즈 
+  let rotationFactor = map(
+    amp.getLevel() / 15,
+    amp.getLevel() / 15,
+    amp.getLevel() * 15,
+    amp.getLevel() * 15,
+    PI
+  );
+  let starCount = constrain(int(ampLevel * 3), 100, noOfStars); // 은하 밀도, 사이즈
 
   for (let i = 0; i < starCount; i++) {
-  let rotationFactor = map(amp.getLevel(), 0, 1, 0, PI);
+    let rotationFactor = map(amp.getLevel(), 0, 1, 0, PI);
 
-  if (!isNaN(rotationFactor)) {
-    rotate(i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 7) / starCount);
-  }
-  stars[i].update(ampLevel);
-  stars[i].display();
+    if (!isNaN(rotationFactor)) {
+      rotate(
+        i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 7) / starCount
+      );
+    }
+    stars[i].update(ampLevel);
+    stars[i].display();
   }
   pop();
-  
+
   push();
   translate(0, 0);
   var spectrum = fft.analyze(binCount);
@@ -89,17 +103,33 @@ function draw() {
   }
   // particles[i].showWithBlur(0.1);
   pop();
-  
+
   push();
   targetPosX = constrain(mouseX, 0, width - textWidth(word));
   targetPosY = constrain(mouseY, 0, height - textDescent());
 
-  posX = lerp(posX, targetPosX+20, lerpFactor);
+  posX = lerp(posX, targetPosX + 20, lerpFactor);
   posY = lerp(posY, targetPosY, lerpFactor);
-  
+
   textAlign(LEFT, TOP);
   textSize(18);
-  text(word, posX, posY);
+  if (mouseIsPressed) {
+    text("🎄X-MAS!!!🎄", posX, posY);
+  } else {
+    text(word, posX, posY);
+  }
+  for (let i = texts.length - 1; i >= 0; i--) {
+    let textObj = texts[i];
+    textSize(textObj.size);
+    textAlign(CENTER, CENTER);
+    text(textObj.text, textObj.x, textObj.y);
+
+    textObj.y += 5;
+
+    if (textObj.y > height) {
+      texts.splice(i, 1);
+    }
+  }
   pop();
 
   displayUI();
@@ -108,15 +138,16 @@ function draw() {
 
 function displayStars() {
   let ampLevel = amp.getLevel() * 20000;
-  
+
   let starCount = constrain(int(ampLevel), 100, noOfStars);
   for (let i = 0; i < starCount; i++) {
-    rotate(i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 3) / starCount);
+    rotate(
+      i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 3) / starCount
+    );
     stars[i].display();
     stars[i].update();
   }
 }
-
 
 class Star {
   constructor(majorAxisLen) {
@@ -162,9 +193,25 @@ class Particle {
   }
 }
 
+function mousePressed() {
+  let randomText = textArray[floor(random(textArray.length))];
+  let randomSize = random(23, 35);
+  let textObj = {
+    text: randomText,
+    x: mouseX,
+    y: mouseY,
+    size: randomSize
+  };
+  texts.push(textObj);
+}
+
 function createButtonUI() {
-  const buttonLabels = ['Christmas Song', 'Yukiakari', 'illumination'];
-  const buttonActions = [() => toggleMusic(xsong, btn1), () => toggleMusic(yuki, btn2), () => toggleMusic(ill, btn3)];
+  const buttonLabels = ["Christmas Song", "Yukiakari", "illumination"];
+  const buttonActions = [
+    () => toggleMusic(xsong, btn1),
+    () => toggleMusic(yuki, btn2),
+    () => toggleMusic(ill, btn3),
+  ];
 
   [btn1, btn2, btn3] = buttonLabels.map((label, idx) => {
     let btn = createButton(label);
@@ -175,17 +222,17 @@ function createButtonUI() {
     return btn;
   });
 
-  jumpButton1 = createButton('<<');
+  jumpButton1 = createButton("<<");
   jumpButton1.size(30, 23);
   jumpButton1.position(270, 1100);
   jumpButton1.mousePressed(() => jumpSong(-0.2));
 
-  jumpButton2 = createButton('>>');
+  jumpButton2 = createButton(">>");
   jumpButton2.size(30, 23);
   jumpButton2.position(338, 1100);
   jumpButton2.mousePressed(() => jumpSong(0.2));
-  
-  psButton = createButton('▶');
+
+  psButton = createButton("▶");
   psButton.size(30, 23);
   psButton.position(304, 1100);
   psButton.mousePressed(toggleRandomPlayPause);
@@ -206,28 +253,30 @@ function styleButton(btn) {
 
 function displayUI() {
   textSize(15);
-  fill('white');
+  fill("white");
   text("vol", 170, 1160);
   text("L                 R", 320, 1160);
   text("speed", 465, 1160);
+  text("+ 20%", 398, 1117);
+  text("- 20%", 240, 1117);
 
-  setMusicProperties(xsong, btn1, 'Christmas Song');
-  setMusicProperties(yuki, btn2, 'Yukiakari');
-  setMusicProperties(ill, btn3, 'illumination');
+  setMusicProperties(xsong, btn1, "Christmas Song");
+  setMusicProperties(yuki, btn2, "Yukiakari");
+  setMusicProperties(ill, btn3, "illumination");
 }
 
 function displayCurrentSongTitle() {
-  fill('white');
+  fill("white");
   textSize(20);
   textAlign(CENTER);
-  
-  let currentSongTitle = '';
+
+  let currentSongTitle = "";
   if (xsong.isPlaying()) {
-    currentSongTitle = 'Christmas Song - Back Number';
+    currentSongTitle = "🎄Christmas Song - Back Number🎄";
   } else if (yuki.isPlaying()) {
-    currentSongTitle = 'Yukiakari - &TEAM';
+    currentSongTitle = "🐺Yukiakari - &TEAM🐺";
   } else if (ill.isPlaying()) {
-    currentSongTitle = 'illumination - &TEAM';
+    currentSongTitle = "🐺illumination - &TEAM🐺";
   }
   text(currentSongTitle, width / 2, 1070);
 }
@@ -243,9 +292,9 @@ function setMusicProperties(sound, button, label) {
 }
 
 function resetButtons(activeButton) {
-  [btn1, btn2, btn3].forEach(btn => {
-    if (btn !== activeButton && btn.html() !== 'STOP') {
-      btn.html(btn.elt.textContent.split(' ')[0]);
+  [btn1, btn2, btn3].forEach((btn) => {
+    if (btn !== activeButton && btn.html() !== "STOP") {
+      btn.html(btn.elt.textContent.split(" ")[0]);
     }
   });
 }
@@ -258,7 +307,7 @@ function stopAllMusic() {
 
 function pauseAllMusic() {
   const sounds = [xsong, yuki, ill];
-  sounds.forEach(sound => {
+  sounds.forEach((sound) => {
     if (sound.isPlaying()) {
       sound.pause();
     }
@@ -266,26 +315,26 @@ function pauseAllMusic() {
 }
 
 function updateButtonLabel(activeSound) {
-  if (activeSound === xsong) btn1.html('STOP');
-  else if (activeSound === yuki) btn2.html('STOP');
-  else if (activeSound === ill) btn3.html('STOP');
+  if (activeSound === xsong) btn1.html("STOP");
+  else if (activeSound === yuki) btn2.html("STOP");
+  else if (activeSound === ill) btn3.html("STOP");
 }
 
 function toggleMusic(sound, button) {
   if (!sound.isPlaying()) {
     stopAllMusic();
     sound.play();
-    button.html('STOP');
+    button.html("STOP");
   } else {
     sound.stop();
-    button.html(button.elt.textContent.split(' ')[0]);
+    button.html(button.elt.textContent.split(" ")[0]);
   }
 }
 
 function toggleRandomPlayPause() {
   const sounds = [xsong, yuki, ill];
 
-  if (psButton.html() === '▶') {
+  if (psButton.html() === "▶") {
     stopAllMusic();
     resetButtons(null);
 
@@ -294,10 +343,10 @@ function toggleRandomPlayPause() {
 
     updateButtonLabel(randomSound);
     currentSongTitle = getSongTitle(randomSound);
-    psButton.html('❚❚');
+    psButton.html("❚❚");
   } else {
     pauseAllMusic();
-    psButton.html('▶');
+    psButton.html("▶");
     currentSongTitle = "";
     resetButtons(null);
   }
@@ -312,12 +361,20 @@ function getSongTitle(sound) {
 
 function jumpSong(percentage) {
   const sounds = [xsong, yuki, ill];
-  sounds.forEach(sound => {
+  sounds.forEach((sound) => {
     if (sound && sound.isPlaying()) {
       const currentTime = sound.currentTime();
       const duration = sound.duration();
-      if (currentTime !== undefined && duration !== undefined && duration - currentTime > 1) {
-        const newTime = constrain(currentTime + percentage * duration, 0, duration);
+      if (
+        currentTime !== undefined &&
+        duration !== undefined &&
+        duration - currentTime > 1
+      ) {
+        const newTime = constrain(
+          currentTime + percentage * duration,
+          0,
+          duration
+        );
         sound.jump(newTime);
       }
     }
