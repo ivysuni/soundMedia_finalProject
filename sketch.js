@@ -6,13 +6,18 @@ let jumpButton1, jumpButton2, psButton;
 let amp;
 
 let rotationGradient;
-const noOfStars = 10000, sizeDiff = 0.1, majorAxisMinLen = 10, widthHeightRatio = 0.7;
+const noOfStars = 10000, sizeDiff = 0.07, majorAxisMinLen = 3, widthHeightRatio = 0.7;
 const stars = [];
 
 var fft;
-var smoothing = 0.8; // FFT smoothing 값
-var binCount = 1024; // FFT 배열 크기
-var particles = new Array(binCount);
+var smoothing = 0.8;
+var binCount = 1024;
+var particles = new Array(binCount*1.5);
+
+let word = "X-MAS!!!";
+let posX, posY;
+let targetPosX, targetPosY;
+let lerpFactor = 0.1;
 
 function preload() {
   soundFormats('mp3', 'ogg');
@@ -24,6 +29,12 @@ function preload() {
 function setup() {
   createCanvas(640, 1280);
   amp = new p5.Amplitude();
+  
+  posX = width / 2;
+  posY = height / 2;
+  targetPosX = mouseX;
+  targetPosY = mouseY;
+  
   rotationGradient = PI / noOfStars;
 
   for (let i = 0; i < noOfStars; i++) {
@@ -35,12 +46,11 @@ function setup() {
   createSliders();
   
   fft = new p5.FFT(smoothing, binCount);
-  // fft.setInput(random(sounds));
 
-  // Particle 인스턴스 초기화
+  
   for (var i = 0; i < particles.length; i++) {
     var x = map(i, 0, binCount, 0, width * 2);
-    var y = random(0, height);
+    var y = random(-height, height);
     var position = createVector(x, y);
     particles[i] = new Particle(position);
   }
@@ -51,18 +61,22 @@ function draw() {
 
   // Star Layer
   push();
-  translate(width / 2, height / 2 - 350);
+  translate(width / 2, height / 2 - 330);
   let ampLevel = amp.getLevel() * 20000;
-  let rotationFactor = map(mouseX, mouseX, width, mouseX, PI);
+  let rotationFactor = map(amp.getLevel()/15, amp.getLevel()/15, amp.getLevel()*15, amp.getLevel()*15, PI);
+  let starCount = constrain(int(ampLevel*3), 100, noOfStars); // 은하 밀도, 사이즈 
 
-  let starCount = constrain(int(ampLevel), 100, noOfStars);
   for (let i = 0; i < starCount; i++) {
-    stars[i].display();
-    stars[i].update();
+  let rotationFactor = map(amp.getLevel(), 0, 1, 0, PI);
+
+  if (!isNaN(rotationFactor)) {
+    rotate(i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 7) / starCount);
+  }
+  stars[i].update(ampLevel);
+  stars[i].display();
   }
   pop();
-
-  // FFT Particle Layer
+  
   push();
   translate(0, 0);
   var spectrum = fft.analyze(binCount);
@@ -75,6 +89,18 @@ function draw() {
   }
   // particles[i].showWithBlur(0.1);
   pop();
+  
+  push();
+  targetPosX = constrain(mouseX, 0, width - textWidth(word));
+  targetPosY = constrain(mouseY, 0, height - textDescent());
+
+  posX = lerp(posX, targetPosX+20, lerpFactor);
+  posY = lerp(posY, targetPosY, lerpFactor);
+  
+  textAlign(LEFT, TOP);
+  textSize(18);
+  text(word, posX, posY);
+  pop();
 
   displayUI();
   displayCurrentSongTitle();
@@ -82,8 +108,7 @@ function draw() {
 
 function displayStars() {
   let ampLevel = amp.getLevel() * 20000;
-  let rotationFactor = map(mouseX, mouseX, mouseY, mouseY, PI);
-
+  
   let starCount = constrain(int(ampLevel), 100, noOfStars);
   for (let i = 0; i < starCount; i++) {
     rotate(i < starCount / 2 ? rotationFactor / starCount : (rotationFactor * 3) / starCount);
@@ -92,9 +117,6 @@ function displayStars() {
   }
 }
 
-function displayFFTParticles() {
-  // FFT 기반 파티클 그리기
-}
 
 class Star {
   constructor(majorAxisLen) {
@@ -112,7 +134,8 @@ class Star {
     circle(x, y, 2);
   }
 
-  update(r) {
+  update(ampLevel) {
+    this.deltaTheta = 0.01 + ampLevel * 0.05;
     this.theta += this.deltaTheta;
   }
 }
@@ -122,7 +145,7 @@ class Particle {
     this.position = position;
     this.scale = random(0, 0.1);
     this.speed = createVector(0, random(0, 10));
-    this.color = [random(255, 255), random(255, 255), random(255, 255), random(0, 255)];
+    this.color = [255, 255, 255, random(0, 255)];
   }
 
   update(someLevel) {
@@ -147,31 +170,31 @@ function createButtonUI() {
     let btn = createButton(label);
     btn.size(134, 23);
     styleButton(btn);
-    btn.position(103 + idx * 150, 790);
+    btn.position(103 + idx * 150, 1200);
     btn.mousePressed(buttonActions[idx]);
     return btn;
   });
 
   jumpButton1 = createButton('<<');
   jumpButton1.size(30, 23);
-  jumpButton1.position(270, 710);
+  jumpButton1.position(270, 1100);
   jumpButton1.mousePressed(() => jumpSong(-0.2));
 
   jumpButton2 = createButton('>>');
   jumpButton2.size(30, 23);
-  jumpButton2.position(338, 710);
+  jumpButton2.position(338, 1100);
   jumpButton2.mousePressed(() => jumpSong(0.2));
   
   psButton = createButton('▶');
   psButton.size(30, 23);
-  psButton.position(304, 710);
+  psButton.position(304, 1100);
   psButton.mousePressed(toggleRandomPlayPause);
 }
 
 function createSliders() {
-  sliderVol = createSlider(0, 4, 1, 0.1).position(103, 765);
-  sliderPan = createSlider(-1, 1, 0, 0.1).position(253, 765);
-  sliderRate = createSlider(0, 2, 1, 0.1).position(403, 765);
+  sliderVol = createSlider(0, 4, 1, 0.1).position(103, 1170);
+  sliderPan = createSlider(-1, 1, 0, 0.1).position(253, 1170);
+  sliderRate = createSlider(0, 2, 1, 0.1).position(403, 1170);
 }
 
 function styleButton(btn) {
@@ -184,9 +207,9 @@ function styleButton(btn) {
 function displayUI() {
   textSize(15);
   fill('white');
-  text("vol", 170, 760);
-  text("L                 R", 320, 760);
-  text("speed", 465, 760);
+  text("vol", 170, 1160);
+  text("L                 R", 320, 1160);
+  text("speed", 465, 1160);
 
   setMusicProperties(xsong, btn1, 'Christmas Song');
   setMusicProperties(yuki, btn2, 'Yukiakari');
@@ -206,7 +229,7 @@ function displayCurrentSongTitle() {
   } else if (ill.isPlaying()) {
     currentSongTitle = 'illumination - &TEAM';
   }
-  text(currentSongTitle, width / 2, height / 2 + 50);
+  text(currentSongTitle, width / 2, 1070);
 }
 
 function setMusicProperties(sound, button, label) {
