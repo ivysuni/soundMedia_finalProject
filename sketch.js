@@ -229,17 +229,17 @@ function createButtonUI() {
 
   jumpButton1 = createButton("<<");
   jumpButton1.size(30, 23);
-  jumpButton1.position(270, 1080);
+  jumpButton1.position(270, 1070);
   jumpButton1.mousePressed(() => jumpSong(-0.2));
 
   jumpButton2 = createButton(">>");
   jumpButton2.size(30, 23);
-  jumpButton2.position(338, 1080);
+  jumpButton2.position(338, 1070);
   jumpButton2.mousePressed(() => jumpSong(0.2));
 
   psButton = createButton("▶");
   psButton.size(30, 23);
-  psButton.position(304, 1080);
+  psButton.position(304, 1070);
   psButton.mousePressed(toggleRandomPlayPause);
 }
 
@@ -263,8 +263,8 @@ function displayUI() {
   text("vol", 173, 1140);
   text("L                 R", 320, 1140);
   text("speed", 467, 1140);
-  text("+ 20%", 398, 1097);
-  text("- 20%", 240, 1097);
+  text("+ 20%", 398, 1087);
+  text("- 20%", 240, 1087);
 
   setMusicProperties(xsong, btn1, "Christmas Song");
   setMusicProperties(yuki, btn2, "Yukiakari");
@@ -334,11 +334,15 @@ function toggleMusic(sound, button) {
     stopAllMusic();
     sound.play();
     button.html("STOP");
+    psButton.html("❚❚");
   } else {
     sound.stop();
     button.html(button.elt.textContent.split(" ")[0]);
+    psButton.html("▶");
   }
 }
+
+
 
 function toggleRandomPlayPause() {
   const sounds = [xsong, yuki, ill];
