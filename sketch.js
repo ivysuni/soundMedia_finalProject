@@ -25,7 +25,6 @@ let lerpFactor = 0.1;
 let textArray = ["🥶", "🎄", "🎁", "🐺", "⛄", "❄️"];
 let texts = [];
 
-
 function preload() {
   soundFormats("mp3", "ogg");
   xsong = loadSound("ChristmasSong.mp3");
@@ -64,10 +63,28 @@ function setup() {
 
 function draw() {
   background("black");
+  
+  // Snow Layer
+  push();
+  drawingContext.shadowBlur = 0;
+  drawingContext.shadowColor = color(255);
+  translate(0, 0);
+  var spectrum = fft.analyze(binCount);
+
+  for (var i = 0; i < binCount; i++) {
+    var thisLevel = map(spectrum[i], 0, 255, 0, 1);
+
+    particles[i].update(thisLevel);
+    particles[i].show();
+  }
+  // particles[i].showWithBlur(0.1);
+  pop();
 
   // Star Layer
   push();
-  translate(width / 2, height / 2 - 130);
+  drawingContext.shadowBlur = 0;
+  drawingContext.shadowColor = color(255);
+  translate(width / 2, height / 2 - 150);
   let ampLevel = amp.getLevel() * 20000;
   let rotationFactor = map(
     amp.getLevel() / 15,
@@ -89,19 +106,6 @@ function draw() {
     stars[i].update(ampLevel);
     stars[i].display();
   }
-  pop();
-
-  push();
-  translate(0, 0);
-  var spectrum = fft.analyze(binCount);
-
-  for (var i = 0; i < binCount; i++) {
-    var thisLevel = map(spectrum[i], 0, 255, 0, 1);
-
-    particles[i].update(thisLevel);
-    particles[i].show();
-  }
-  // particles[i].showWithBlur(0.1);
   pop();
 
   push();
@@ -189,6 +193,7 @@ class Particle {
 
   show() {
     fill(this.color);
+    noStroke();
     ellipse(this.position.x, this.position.y, this.diameter, this.diameter);
   }
 }
@@ -217,31 +222,31 @@ function createButtonUI() {
     let btn = createButton(label);
     btn.size(134, 23);
     styleButton(btn);
-    btn.position(103 + idx * 150, 1200);
+    btn.position(103 + idx * 150, 1180);
     btn.mousePressed(buttonActions[idx]);
     return btn;
   });
 
   jumpButton1 = createButton("<<");
   jumpButton1.size(30, 23);
-  jumpButton1.position(270, 1100);
+  jumpButton1.position(270, 1080);
   jumpButton1.mousePressed(() => jumpSong(-0.2));
 
   jumpButton2 = createButton(">>");
   jumpButton2.size(30, 23);
-  jumpButton2.position(338, 1100);
+  jumpButton2.position(338, 1080);
   jumpButton2.mousePressed(() => jumpSong(0.2));
 
   psButton = createButton("▶");
   psButton.size(30, 23);
-  psButton.position(304, 1100);
+  psButton.position(304, 1080);
   psButton.mousePressed(toggleRandomPlayPause);
 }
 
 function createSliders() {
-  sliderVol = createSlider(0, 4, 1, 0.1).position(103, 1170);
-  sliderPan = createSlider(-1, 1, 0, 0.1).position(253, 1170);
-  sliderRate = createSlider(0, 2, 1, 0.1).position(403, 1170);
+  sliderVol = createSlider(0, 4, 1, 0.1).position(103, 1150);
+  sliderPan = createSlider(-1, 1, 0, 0.1).position(253, 1150);
+  sliderRate = createSlider(0, 2, 1, 0.1).position(403, 1150);
 }
 
 function styleButton(btn) {
@@ -254,11 +259,12 @@ function styleButton(btn) {
 function displayUI() {
   textSize(15);
   fill("white");
-  text("vol", 170, 1160);
-  text("L                 R", 320, 1160);
-  text("speed", 465, 1160);
-  text("+ 20%", 398, 1117);
-  text("- 20%", 240, 1117);
+  textStyle(NORMAL);
+  text("vol", 173, 1140);
+  text("L                 R", 320, 1140);
+  text("speed", 467, 1140);
+  text("+ 20%", 398, 1097);
+  text("- 20%", 240, 1097);
 
   setMusicProperties(xsong, btn1, "Christmas Song");
   setMusicProperties(yuki, btn2, "Yukiakari");
@@ -267,8 +273,11 @@ function displayUI() {
 
 function displayCurrentSongTitle() {
   fill("white");
-  textSize(20);
+  textSize(23);
   textAlign(CENTER);
+  textStyle(BOLD);
+  drawingContext.shadowBlur = 32;
+  drawingContext.shadowColor = color(255);
 
   let currentSongTitle = "";
   if (xsong.isPlaying()) {
@@ -278,7 +287,7 @@ function displayCurrentSongTitle() {
   } else if (ill.isPlaying()) {
     currentSongTitle = "🐺illumination - &TEAM🐺";
   }
-  text(currentSongTitle, width / 2, 1070);
+  text(currentSongTitle, width / 2, 1020);
 }
 
 function setMusicProperties(sound, button, label) {
